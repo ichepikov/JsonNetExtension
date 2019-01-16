@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
@@ -18,26 +19,33 @@ namespace JsonNetExtension.Converters
 
             foreach (var jsonProperty in properties)
             {
-                string jsonPath = jsonProperty.PropertyName;
+                var propertyPath = jsonProperty.PropertyName.Split('.');
 
-                var nesting = jsonPath.Split('.');
-                JObject lastLevel = result;
-
-                for (int i = 0; i < nesting.Length; ++i)
+                JObject currentLevel = result;
+                for (int i = 0; i < propertyPath.Length - 1; ++i)
                 {
-                    if (i == (nesting.Length - 1))
-                    {
-                        lastLevel[nesting[i]] =
-                            JToken.FromObject(jsonProperty.ValueProvider.GetValue(value), serializer);
-                    }
-                    else
-                    {
-                        if (lastLevel[nesting[i]] == null)
-                            lastLevel[nesting[i]] = new JObject();
+                    if (currentLevel[propertyPath[i]] == null)
+                        currentLevel[propertyPath[i]] = new JObject();
 
-                        lastLevel = (JObject) lastLevel[nesting[i]];
+                    currentLevel = (JObject) currentLevel[propertyPath[i]];
+                }
+
+                JToken propretyValueToken;
+                if (jsonProperty.Converter != null && jsonProperty.Converter.CanWrite)
+                {
+                    using (var stringWriter = new StringWriter())
+                    using (var jsonWriter = new JsonTextWriter(stringWriter))
+                    {
+                        jsonProperty.Converter.WriteJson(jsonWriter, jsonProperty.ValueProvider.GetValue(value), serializer);
+                        propretyValueToken = JToken.Parse(stringWriter.ToString());
                     }
                 }
+                else
+                {
+                    propretyValueToken = JToken.FromObject(jsonProperty.ValueProvider.GetValue(value));
+                }
+
+                currentLevel[propertyPath[propertyPath.Length - 1]] = propretyValueToken;
             }
 
             serializer.Serialize(writer, result);

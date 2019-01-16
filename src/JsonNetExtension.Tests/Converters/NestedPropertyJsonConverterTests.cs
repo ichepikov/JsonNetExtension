@@ -9,7 +9,49 @@ namespace JsonNetExtension.Tests.Converters
     public class NestedPropertyJsonConverterTests
     {
         [Fact]
-        public void SimpleTestModelDesirealizationTest()
+        public void SerializationWithObjectPropertyTest()
+        {
+            var jsonString =
+                "{\"NestedNode\":{\"Data\":{\"name\":\"test\"}}}";
+
+            var obj =
+                new PropertyTestModel<ModelWithJsonProperty> {Data = new ModelWithJsonProperty {Name = "test"}};
+
+            var result = JsonConvert.SerializeObject(obj);
+
+            result.ShouldDeepEqual(jsonString);
+        }
+
+        [Fact]
+        public void SerializationWithPropertyConverterTest()
+        {
+            var jsonString =
+                "{\"NestedNode\":{\"Data\":\"2000{}05{}01\"}}";
+
+            var obj = new PropertyTestModelWithConverter {Data = new DateTime(2000, 5, 1)};
+
+            var result =
+                JsonConvert.SerializeObject(obj);
+
+            result.ShouldDeepEqual(jsonString);
+        }
+
+        [Fact]
+        public void SimpleTestModelSerializationTest()
+        {
+            var jsonString =
+                "{\"NestedNode\":{\"Data\":\"test\"}}";
+
+            var obj = new SimpleTestModel<string> {Data = "test"};
+
+            var result =
+                JsonConvert.SerializeObject(obj, new NestedPropertyJsonConverter());
+
+            result.ShouldDeepEqual(jsonString);
+        }
+
+        [Fact]
+        public void SimpleTestModelDeserializationTest()
         {
             var jsonString =
                 "{\"NestedNode\":{\"Data\":\"test\"}}";
@@ -23,7 +65,7 @@ namespace JsonNetExtension.Tests.Converters
         }
 
         [Fact]
-        public void SimplePropertyDesirealizationTest()
+        public void SimplePropertyDeserializationTest()
         {
             var jsonString =
                 "{\"NestedNode\":{\"Data\":\"test\"}}";
@@ -36,12 +78,13 @@ namespace JsonNetExtension.Tests.Converters
         }
 
         [Fact]
-        public void NestedObjectPropertyDesirealizationTest()
+        public void NestedObjectPropertyDeserializationTest()
         {
             var jsonString =
                 "{\"NestedNode\":{\"Data\":{\"name\":\"test\"}}}";
 
-            var expectedResult = new PropertyTestModel<ModelWithJsonProperty> {Data = new ModelWithJsonProperty { Name = "test"}};
+            var expectedResult =
+                new PropertyTestModel<ModelWithJsonProperty> {Data = new ModelWithJsonProperty {Name = "test"}};
 
             var result = JsonConvert.DeserializeObject<PropertyTestModel<ModelWithJsonProperty>>(jsonString);
 
@@ -49,7 +92,7 @@ namespace JsonNetExtension.Tests.Converters
         }
 
         [Fact]
-        public void PropertyWithConverterDesirealizationTest()
+        public void PropertyWithConverterDeserializationTest()
         {
             var jsonString =
                 "{\"NestedNode\":{\"Data\":\"2000{}05{}01\"}}";
