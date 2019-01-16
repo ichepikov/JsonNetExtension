@@ -9,6 +9,20 @@ namespace JsonNetExtension.Tests.Converters
     public class NestedPropertyJsonConverterTests
     {
         [Fact]
+        public void SimpleTestModelDesirealizationTest()
+        {
+            var jsonString =
+                "{\"NestedNode\":{\"Data\":\"test\"}}";
+
+            var expectedResult = new SimpleTestModel<string> {Data = "test"};
+
+            var result =
+                JsonConvert.DeserializeObject<SimpleTestModel<string>>(jsonString, new NestedPropertyJsonConverter());
+
+            expectedResult.ShouldDeepEqual(result);
+        }
+
+        [Fact]
         public void SimplePropertyDesirealizationTest()
         {
             var jsonString =

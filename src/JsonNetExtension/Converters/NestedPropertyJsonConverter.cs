@@ -85,8 +85,11 @@ namespace JsonNetExtension.Converters
 
         public override bool CanConvert(Type objectType)
         {
-            // CanConvert is not called when [JsonConverter] attribute is used
-            return false;
+            var contract =
+                JsonSerializer.Create().ContractResolver.ResolveContract(objectType);
+
+            return contract is JsonObjectContract objectContract &&
+                   objectContract.Properties.Any(e => !e.Ignored && e.PropertyName.Contains('.'));
         }
     }
 }
