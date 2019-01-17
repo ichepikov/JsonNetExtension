@@ -9,6 +9,20 @@ namespace JsonNetExtension.Tests.Converters
     public class NestedPropertyJsonConverterTests
     {
         [Fact]
+        public void SerializationWithSeparatorPropertyTest()
+        {
+            var jsonString =
+                "{\"NestedNode\":{\"Data\":\"test\"}}";
+
+            var obj =
+                new PathSeparatorTestModel<string> { Data = "test" };
+
+            var result = JsonConvert.SerializeObject(obj);
+
+            result.ShouldDeepEqual(jsonString);
+        }
+
+        [Fact]
         public void SerializationWithObjectPropertyTest()
         {
             var jsonString =
@@ -122,6 +136,13 @@ namespace JsonNetExtension.Tests.Converters
         public class SimpleTestModel<T>
         {
             [JsonProperty("NestedNode.Data")]
+            public T Data { get; set; }
+        }
+
+        [JsonConverter(typeof(NestedPropertyJsonConverter), '/')]
+        public class PathSeparatorTestModel<T>
+        {
+            [JsonProperty("NestedNode/Data")]
             public T Data { get; set; }
         }
 
