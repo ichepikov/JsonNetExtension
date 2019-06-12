@@ -32,32 +32,35 @@ namespace JsonNetExtension.Converters
                 var propertyPath = jsonProperty.PropertyName.Split(_pathSeparator);
 
                 JObject currentLevel = result;
-                for (int i = 0; i < propertyPath.Length - 1; i++)
+
+                foreach (var propertyNode in propertyPath.Take(propertyPath.Length - 1))
                 {
-                    if (currentLevel[propertyPath[i]] == null)
-                        currentLevel[propertyPath[i]] = new JObject();
+                    var nextLevel = currentLevel[propertyNode] as JObject;
+                   
+                    if (nextLevel == null)
+                        currentLevel[propertyNode] = nextLevel = new JObject();
 
-                    currentLevel = (JObject) currentLevel[propertyPath[i]];
+                    currentLevel = nextLevel;
                 }
-
+                
                 var tokenValue = jsonProperty.ValueProvider.GetValue(value);
                 
-                JToken propretyValueToken;
+                JToken propertyValueToken;
                 if (jsonProperty.Converter != null && jsonProperty.Converter.CanWrite)
                 {
                     using (var stringWriter = new StringWriter())
                     using (var jsonWriter = new JsonTextWriter(stringWriter))
                     {
                         jsonProperty.Converter.WriteJson(jsonWriter, tokenValue, serializer);
-                        propretyValueToken = JToken.Parse(stringWriter.ToString());
+                        propertyValueToken = JToken.Parse(stringWriter.ToString());
                     }
                 }
                 else
                 {
-                    propretyValueToken = JToken.FromObject(tokenValue);
+                    propertyValueToken = JToken.FromObject(tokenValue);
                 }
 
-                currentLevel[propertyPath[propertyPath.Length - 1]] = propretyValueToken;
+                currentLevel[propertyPath[propertyPath.Length - 1]] = propertyValueToken;
             }
 
             serializer.Serialize(writer, result);
@@ -78,7 +81,7 @@ namespace JsonNetExtension.Converters
 
                 JToken token = SelectToken(jsonObject, jsonPath);
 
-                if (token != null && token.Type != JTokenType.Null)
+                if (token != null)
                 {
                     object value;
                     if (prop.Converter == null || !prop.Converter.CanRead)
@@ -87,9 +90,11 @@ namespace JsonNetExtension.Converters
                     }
                     else
                     {
-                        var r = token.CreateReader();
-                        r.Read();
-                        value = prop.Converter.ReadJson(r, prop.PropertyType, null, serializer);
+                        using (var jsonReader = token.CreateReader())
+                        {
+                            jsonReader.Read();
+                            value = prop.Converter.ReadJson(jsonReader, prop.PropertyType, null, serializer);
+                        }
                     }
 
                     prop.ValueProvider.SetValue(result, value);
@@ -117,9 +122,9 @@ namespace JsonNetExtension.Converters
 
         public override bool CanConvert(Type objectType)
         {
-            var contract =
+            JsonContract contract =
                 JsonSerializer.Create().ContractResolver.ResolveContract(objectType);
-
+            
             return contract is JsonObjectContract objectContract &&
                    objectContract.Properties.Any(e => !e.Ignored && e.PropertyName.Contains(_pathSeparator));
         }
